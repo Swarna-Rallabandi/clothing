@@ -29,4 +29,7 @@ COPY . .
 
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 3000
+CMD ["/entrypoint.sh"]
