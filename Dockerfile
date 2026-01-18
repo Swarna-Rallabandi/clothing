@@ -1,25 +1,38 @@
-FROM node:14
-ARG SRC_DIR=/opt/i27
-#create a directory inside the container
-RUN mkdir -p $SRC_DIR
+# -------------------------
+# 1) Build stage
+# -------------------------
+FROM node:14 AS build
 
-#set the working directory inside the container
+ARG SRC_DIR=/opt/i27
 WORKDIR $SRC_DIR
 
-#copy current content to /opt/i27/
-COPY . $SRC_DIR
+# Copy only package files first (better caching)
+COPY package*.json ./
 
-# install  node.js dependencies
-RUN npm install
+# Install dependencies (use ci if package-lock exists)
+RUN npm ci --only=production || npm install --production
 
-#expose the port
-EXPOSE 3000
+# Copy app source
+COPY . .
 
-#copy enterypoint script
+# If your app has a build step (React/Next/Vite etc), keep this:
+# RUN npm run build
+
+
+# -------------------------
+# 2) Runtime stage (smaller)
+# -------------------------
+FROM node:14-slim AS runtime
+
+ARG SRC_DIR=/opt/i27
+WORKDIR $SRC_DIR
+
+# Copy only what is needed from build stage
+COPY --from=build $SRC_DIR ./
+
+# Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
-
-#make the entrypoint as exexuteable
 RUN chmod +x /entrypoint.sh
 
+EXPOSE 3000
 CMD ["/entrypoint.sh"]
-
