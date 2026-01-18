@@ -1,7 +1,7 @@
 FROM node:14
 ARG SRC_DIR=/opt/i27
 #create a directory inside the container
-RUN mkidir -p $SRC_DIR
+RUN mkdir -p $SRC_DIR
 
 #set the working directory inside the container
 WORKDIR $SRC_DIR
