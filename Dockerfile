@@ -1,38 +1,32 @@
 # -------------------------
-# 1) Build stage
+# Stage 1: Dependencies
 # -------------------------
-FROM node:14 AS build
+FROM node:14 AS deps
 
 ARG SRC_DIR=/opt/i27
 WORKDIR $SRC_DIR
 
-# Copy only package files first (better caching)
+# Copy only package files for better cache
 COPY package*.json ./
 
-# Install dependencies (use ci if package-lock exists)
-RUN npm ci --only=production || npm install --production
-
-# Copy app source
-COPY . .
-
-# If your app has a build step (React/Next/Vite etc), keep this:
-# RUN npm run build
+# Install ALL dependencies (includes devDependencies like cross-env)
+RUN npm install
 
 
 # -------------------------
-# 2) Runtime stage (smaller)
+# Stage 2: Dev Runtime
 # -------------------------
-FROM node:14-slim AS runtime
+FROM node:14 AS dev
 
 ARG SRC_DIR=/opt/i27
 WORKDIR $SRC_DIR
 
-# Copy only what is needed from build stage
-COPY --from=build $SRC_DIR ./
+# Copy node_modules from deps stage
+COPY --from=deps $SRC_DIR/node_modules ./node_modules
+
+# Copy application source
+COPY . .
 
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-EXPOSE 3000
-CMD ["/entrypoint.sh"]
+RUN chmod
