@@ -1,35 +1,27 @@
-# -------------------------
-# Stage 1: Dependencies
-# -------------------------
-FROM node:14 AS deps
-
+FROM node:14
 ARG SRC_DIR=/opt/i27
+# Create a directory inside the container
+RUN mkdir -p $SRC_DIR
+
+# Set the working directory inside the container 
 WORKDIR $SRC_DIR
 
-# Copy only package files for better cache
-COPY package*.json ./
 
-# Install ALL dependencies (includes devDependencies like cross-env)
-RUN npm install
+# Copy the current content to /opt/i27/ 
+COPY . $SRC_DIR
 
 
-# -------------------------
-# Stage 2: Dev Runtime
-# -------------------------
-FROM node:14 AS dev
 
-ARG SRC_DIR=/opt/i27
-WORKDIR $SRC_DIR
+# Install node.js dependencies
+RUN npm install 
 
-# Copy node_modules from deps stage
-COPY --from=deps $SRC_DIR/node_modules ./node_modules
-
-# Copy application source
-COPY . .
+# Expose the port
+EXPOSE 3000 
 
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
+
+# make the entrypoint as executable
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 3000
 CMD ["/entrypoint.sh"]
